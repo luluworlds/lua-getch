@@ -6,10 +6,11 @@ directly by requiring getch directly.
 
 -- load C module
 local getch = require("getch")
-local bit = require("bit32")
 
-
-
+-- remove a single bit from an integer, using portable(5.1-5.4) Lua only
+local function unset_bit(bits, bit)
+	return ((math.floor(bits / bit) % 2 == 1) and (bits - bit)) or bits
+end
 
 -- enter non-canonical mode and disable echo("raw mode")
 local lflags, restore_fd, is_nb
@@ -25,7 +26,7 @@ function getch.set_raw_mode(fd, non_blocking)
 	restore_fd = fd
 
 	-- remove ICANON and ECHO from lflags
-	local new_lflags = bit.band(old_lflags, bit.bnot(getch.lflags.ICANON + getch.lflags.ECHO))
+	local new_lflags = unset_bit(unset_bit(old_lflags, getch.lflags.ICANON), getch.lflags.ECHO)
 
 	-- set the new flags
 	assert(getch.set_termios_attributes(fd, nil, nil, nil, new_lflags))
